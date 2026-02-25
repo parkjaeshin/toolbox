@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PNG Sprite Sheet Converter</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>PNG Sprite Sheet Converter</h1>
+            <p class="subtitle">여러 개의 PNG 파일을 하나로 합쳐 스프라이트 시트를 만들어보세요.</p>
+        </header>
+
+        <main>
+            <section class="upload-section">
+                <div class="drop-zone" id="drop-zone">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>파일을 이곳에 드래그하거나 클릭하여 업로드하세요</p>
+                    <input type="file" id="file-input" multiple accept="image/png">
+                </div>
+                <div class="file-list" id="file-list">
+                    <!-- 업로드된 파일 목록이 여기에 나타납니다 -->
+                </div>
+            </section>
+
+            <section class="controls-section">
+                <div class="control-group">
+                    <label for="merge-direction">병합 방향</label>
+                    <select id="merge-direction">
+                        <option value="horizontal">가로로 나열 (Horizontal)</option>
+                        <option value="vertical">세로로 나열 (Vertical)</option>
+                        <option value="grid">그리드 형태 (Grid)</option>
+                    </select>
+                </div>
+
+                <div class="control-group" id="columns-group" style="display: none;">
+                    <label for="max-columns">한 줄당 이미지 개수</label>
+                    <input type="number" id="max-columns" value="4" min="1">
+                </div>
+
+                <div class="control-group">
+                    <label for="spacing">이미지 간 간격 (px)</label>
+                    <input type="number" id="spacing" value="0" min="0">
+                </div>
+
+                <button class="btn" id="merge-btn" disabled>
+                    <i class="fas fa-magic"></i> 병합하기
+                </button>
+            </section>
+
+            <section class="preview-container">
+                <div class="preview-canvas-wrapper" id="canvas-wrapper">
+                    <canvas id="output-canvas"></canvas>
+                </div>
+                <div class="download-bar">
+                    <button class="btn btn-secondary" id="download-btn" style="display: none;">
+                        <i class="fas fa-download"></i> PNG 다운로드
+                    </button>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

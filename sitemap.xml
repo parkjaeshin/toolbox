@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- 메인 페이지 -->
+  <url>
+    <loc>https://내도메인.com/</loc>
+    <lastmod>2026-02-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- 사과게임 -->
+  <url>
+    <loc>https://내도메인.com/사과게임/</loc>
+    <lastmod>2026-02-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- 이재용계산기 -->
+  <url>
+    <loc>https://내도메인.com/이재용계산기/</loc>
+    <lastmod>2026-02-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- 일상퀘스트 -->
+  <url>
+    <loc>https://내도메인.com/일상퀘스트/</loc>
+    <lastmod>2026-02-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- 선생님몰래춤추는학생을잡는선생님 -->
+  <url>
+    <loc>https://내도메인.com/선생님몰래춤추는학생을잡는선생님/</loc>
+    <lastmod>2026-02-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- 기어나와요짐승의숲 -->
+  <url>
+    <loc>https://내도메인.com/기어나와요짐승의숲/</loc>
+    <lastmod>2026-02-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- 오늘뭐먹지 -->
+  <url>
+    <loc>https://내도메인.com/오늘뭐먹지/</loc>
+    <lastmod>2026-02-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+</urlset>
