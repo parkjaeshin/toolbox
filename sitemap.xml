@@ -9,49 +9,18 @@
     <priority>1.0</priority>
   </url>
 
-  <!-- 사과게임 -->
+ 
+  <!-- 다중PNG시트변환기 -->
   <url>
-    <loc>https://내도메인.com/사과게임/</loc>
+    <loc>https://내도메인.com/다중PNG시트변환기/</loc>
     <lastmod>2026-02-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
-  <!-- 이재용계산기 -->
+    <!-- 애니메이션시트편집기 -->
   <url>
-    <loc>https://내도메인.com/이재용계산기/</loc>
-    <lastmod>2026-02-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <!-- 일상퀘스트 -->
-  <url>
-    <loc>https://내도메인.com/일상퀘스트/</loc>
-    <lastmod>2026-02-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <!-- 선생님몰래춤추는학생을잡는선생님 -->
-  <url>
-    <loc>https://내도메인.com/선생님몰래춤추는학생을잡는선생님/</loc>
-    <lastmod>2026-02-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-
-  <!-- 기어나와요짐승의숲 -->
-  <url>
-    <loc>https://내도메인.com/기어나와요짐승의숲/</loc>
-    <lastmod>2026-02-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <!-- 오늘뭐먹지 -->
-  <url>
-    <loc>https://내도메인.com/오늘뭐먹지/</loc>
+    <loc>https://내도메인.com/애니메이션시트편집기/</loc>
     <lastmod>2026-02-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
