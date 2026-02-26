@@ -5,11 +5,21 @@ const InputManager = (() => {
     let canvas, ctx, originalImage, renderContext;
 
     // State
-    let isDragging = false;
-    let startX = 0;
-    let startY = 0;
-    let endX = 0;
-    let endY = 0;
+    let boxWidth = 100;
+    let boxHeight = 100;
+    let boxX = 0;
+    let boxY = 0;
+
+    let isDraggingBox = false;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+
+    let activeHandle = null; // 'tl', 'tr', 'bl', 'br'
+    const HANDLE_RADIUS = 5;
+    const HIT_RADIUS = 12; // Larger area for easier clicking
+    const MIN_SIZE = 10;
+
+    let widthInput, heightInput;
 
     // Call this after image is loaded to setup interaction
     function init(targetCanvas, sourceImage, contextObj) {
@@ -17,6 +27,33 @@ const InputManager = (() => {
         ctx = canvas.getContext('2d');
         originalImage = sourceImage;
         renderContext = contextObj;
+
+        // Setup inputs
+        widthInput = document.getElementById('cropWidthInput');
+        heightInput = document.getElementById('cropHeightInput');
+
+        if (widthInput && !widthInput.dataset.bound) {
+            widthInput.addEventListener('input', (e) => {
+                boxWidth = Math.max(parseInt(e.target.value, 10) || MIN_SIZE, MIN_SIZE);
+                draw();
+            });
+            widthInput.dataset.bound = 'true';
+        }
+
+        if (heightInput && !heightInput.dataset.bound) {
+            heightInput.addEventListener('input', (e) => {
+                boxHeight = Math.max(parseInt(e.target.value, 10) || MIN_SIZE, MIN_SIZE);
+                draw();
+            });
+            heightInput.dataset.bound = 'true';
+        }
+
+        // Initialize box dimensions and position
+        boxWidth = parseInt(widthInput.value, 10) || 100;
+        boxHeight = parseInt(heightInput.value, 10) || 100;
+
+        boxX = canvas.width / 2 - boxWidth / 2;
+        boxY = canvas.height / 2 - boxHeight / 2;
 
         // Clean up old events if re-initializing
         canvas.removeEventListener('mousedown', onMouseDown);
@@ -26,18 +63,27 @@ const InputManager = (() => {
         // Bind new events
         canvas.addEventListener('mousedown', onMouseDown);
         canvas.addEventListener('mousemove', onMouseMove);
-        // Bind mouseup to window to catch drags ending outside canvas
         window.addEventListener('mouseup', onMouseUp);
+
+        const cropBtn = document.getElementById('doCropBtn');
+        if (cropBtn && !cropBtn.dataset.bound) {
+            cropBtn.addEventListener('click', extractCrop);
+            cropBtn.dataset.bound = 'true';
+        }
+
+        // Draw initially to show the box
+        draw();
     }
 
     // Called by general.js on window resize
     function updateCanvasGeometry(contextObj = renderContext) {
-        // Just refresh stored render context if needed
         renderContext = window.General ? window.General.getRenderContext() : contextObj;
+        draw();
     }
 
     function reset() {
-        isDragging = false;
+        isDraggingBox = false;
+        activeHandle = null;
         canvas = null;
         originalImage = null;
         renderContext = null;
@@ -48,7 +94,6 @@ const InputManager = (() => {
         window.removeEventListener('mouseup', onMouseUp);
     }
 
-    // Utility: Get exact mouse coordinates relative to the canvas
     function getMousePos(evt) {
         if (!canvas) return { x: 0, y: 0 };
         const rect = canvas.getBoundingClientRect();
@@ -58,81 +103,165 @@ const InputManager = (() => {
         };
     }
 
+    function getDistance(x1, y1, x2, y2) {
+        return Math.hypot(x1 - x2, y1 - y2);
+    }
+
+    function getHandleHit(pos) {
+        if (getDistance(pos.x, pos.y, boxX, boxY) <= HIT_RADIUS) return 'tl';
+        if (getDistance(pos.x, pos.y, boxX + boxWidth, boxY) <= HIT_RADIUS) return 'tr';
+        if (getDistance(pos.x, pos.y, boxX, boxY + boxHeight) <= HIT_RADIUS) return 'bl';
+        if (getDistance(pos.x, pos.y, boxX + boxWidth, boxY + boxHeight) <= HIT_RADIUS) return 'br';
+        return null;
+    }
+
+    function syncInputs() {
+        if (widthInput) widthInput.value = Math.round(boxWidth);
+        if (heightInput) heightInput.value = Math.round(boxHeight);
+    }
+
     function onMouseDown(evt) {
         if (!originalImage || !renderContext) return;
 
-        isDragging = true;
         const pos = getMousePos(evt);
-        startX = pos.x;
-        startY = pos.y;
-        endX = pos.x;
-        endY = pos.y;
+
+        // Check handle hit first
+        activeHandle = getHandleHit(pos);
+        if (activeHandle) {
+            isDraggingBox = false;
+            return;
+        }
+
+        // Check box hit
+        if (pos.x >= boxX && pos.x <= boxX + boxWidth &&
+            pos.y >= boxY && pos.y <= boxY + boxHeight) {
+            isDraggingBox = true;
+            dragOffsetX = pos.x - boxX;
+            dragOffsetY = pos.y - boxY;
+        }
     }
 
     function onMouseMove(evt) {
-        if (!isDragging) return;
-
         const pos = getMousePos(evt);
-        endX = pos.x;
-        endY = pos.y;
+
+        if (!isDraggingBox && !activeHandle) {
+            // Update cursor based on position
+            if (canvas) {
+                const hit = getHandleHit(pos);
+                if (hit === 'tl' || hit === 'br') canvas.style.cursor = 'nwse-resize';
+                else if (hit === 'tr' || hit === 'bl') canvas.style.cursor = 'nesw-resize';
+                else if (pos.x >= boxX && pos.x <= boxX + boxWidth && pos.y >= boxY && pos.y <= boxY + boxHeight) {
+                    canvas.style.cursor = 'move';
+                } else {
+                    canvas.style.cursor = 'default';
+                }
+            }
+            return;
+        }
+
+        if (activeHandle) {
+            const right = boxX + boxWidth;
+            const bottom = boxY + boxHeight;
+
+            if (activeHandle === 'tl') {
+                boxX = Math.min(pos.x, right - MIN_SIZE);
+                boxY = Math.min(pos.y, bottom - MIN_SIZE);
+                boxWidth = right - boxX;
+                boxHeight = bottom - boxY;
+            } else if (activeHandle === 'tr') {
+                boxWidth = Math.max(pos.x - boxX, MIN_SIZE);
+                boxY = Math.min(pos.y, bottom - MIN_SIZE);
+                boxHeight = bottom - boxY;
+            } else if (activeHandle === 'bl') {
+                boxX = Math.min(pos.x, right - MIN_SIZE);
+                boxWidth = right - boxX;
+                boxHeight = Math.max(pos.y - boxY, MIN_SIZE);
+            } else if (activeHandle === 'br') {
+                boxWidth = Math.max(pos.x - boxX, MIN_SIZE);
+                boxHeight = Math.max(pos.y - boxY, MIN_SIZE);
+            }
+            syncInputs();
+        } else if (isDraggingBox) {
+            boxX = pos.x - dragOffsetX;
+            boxY = pos.y - dragOffsetY;
+        }
 
         // Redraw base image + selection box
         draw();
     }
 
     function onMouseUp(evt) {
-        if (!isDragging) return;
-        isDragging = false;
+        if (!isDraggingBox && !activeHandle) return;
+
+        isDraggingBox = false;
+        activeHandle = null;
 
         // Redraw one last time
         draw();
 
-        // Handle Crop extraction if area is large enough
-        if (Math.abs(endX - startX) > 5 && Math.abs(endY - startY) > 5) {
-            extractCrop();
-        }
 
-        // Clear selection box from Main Canvas UI after crop operation ends
-        // setTimeout(() => {
-        //     window.General.renderImageToCanvas();
-        // }, 500); // Visual delay optional
     }
 
     function draw() {
-        if (!window.General || typeof window.General.renderImageToCanvas !== 'function') return;
+        if (!window.General || typeof window.General.renderImageToCanvas !== 'function' || !canvas) return;
 
-        // Let general.js redraw the base image cleanly
         window.General.renderImageToCanvas();
 
-        if (isDragging) {
-            // Draw dark overlay everywhere EXCEPT the selected box
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height); // Full dim
+        // 1. 반투명 배경 (구멍 뚫기 방식)
+        // 전체 캔버스를 덮지만, 우리가 그리는 경로(Path)를 뺀 나머지를 채우는 방법(evenodd) 사용
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; // 0.5 정도의 반투명
+        ctx.beginPath();
+        // 전체 바깥 테두리
+        ctx.rect(0, 0, canvas.width, canvas.height);
+        // 잘라낼 구멍 (드래그 박스 영역)
+        ctx.rect(boxX, boxY, boxWidth, boxHeight);
+        // 전체 박스에서 안쪽 구멍을 잘라내서 칠함
+        ctx.fill("evenodd");
 
-            const boxWidth = endX - startX;
-            const boxHeight = endY - startY;
+        // 2. 테두리(초록 선) 그리기
+        ctx.strokeStyle = '#4CAF50';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
 
-            // "Cut out" the selected area (make it bright again)
-            ctx.clearRect(startX, startY, boxWidth, boxHeight);
+        // 3. 십자선(Crosshair) 그리기
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'; // 흰색 반투명 선
+        ctx.lineWidth = 1;
 
-            // Re-draw only that slice of the original image to simulate the transparent window
-            // Since clearRect just shows the background color of the container,
-            // we actually need to composite or re-draw the image slice.
-            // A simpler approach using canvas globalCompositeOperation:
+        const centerX = boxX + boxWidth / 2;
+        const centerY = boxY + boxHeight / 2;
 
-            // Draw selection box border
-            ctx.strokeStyle = '#4CAF50'; // Using accent color
-            ctx.lineWidth = 2;
-            ctx.strokeRect(startX, startY, boxWidth, boxHeight);
+        ctx.beginPath();
+        // 수직선 그리기 (박스의 세로축 중심선)
+        ctx.moveTo(centerX, boxY);
+        ctx.lineTo(centerX, boxY + boxHeight);
+        // 수평선 그리기 (박스의 가로축 중심선)
+        ctx.moveTo(boxX, centerY);
+        ctx.lineTo(boxX + boxWidth, centerY);
+        ctx.stroke();
+
+        // 4. 조절점(4개 모서리 점) 그리기
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = '#4CAF50';
+        ctx.lineWidth = 2;
+
+        function drawHandle(x, y) {
+            ctx.beginPath();
+            ctx.arc(x, y, HANDLE_RADIUS, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
         }
+
+        drawHandle(boxX, boxY);
+        drawHandle(boxX + boxWidth, boxY);
+        drawHandle(boxX, boxY + boxHeight);
+        drawHandle(boxX + boxWidth, boxY + boxHeight);
     }
 
     function extractCrop() {
-        // Calculate the bounding box of the selection
-        const rectX = Math.min(startX, endX);
-        const rectY = Math.min(startY, endY);
-        const rectW = Math.abs(startX - endX);
-        const rectH = Math.abs(startY - endY);
+        const rectX = boxX;
+        const rectY = boxY;
+        const rectW = boxWidth;
+        const rectH = boxHeight;
 
         if (!renderContext) return;
 
@@ -166,7 +295,6 @@ const InputManager = (() => {
         // If selection is entirely outside image bounds, abort
         if (cw <= 0 || ch <= 0) {
             console.log("Crop area out of image bounds");
-            window.General.renderImageToCanvas(); // clear overlay
             return;
         }
 
@@ -190,9 +318,6 @@ const InputManager = (() => {
         if (typeof window.displayCroppedResult === 'function') {
             window.displayCroppedResult(dataUrl);
         }
-
-        // Clear selection overlay on main display
-        window.General.renderImageToCanvas();
     }
 
     // Expose public API

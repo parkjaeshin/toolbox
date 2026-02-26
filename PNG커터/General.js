@@ -1,44 +1,79 @@
 // general.js
-// Handles file upload, image rendering, and displaying cropped results.
+// Handles file upload (Drag & Drop + File Input), UI state toggling, and displaying results
 
 const General = (() => {
     // DOM Elements
-    const imageInput = document.getElementById('imageInput');
-    const resetBtn = document.getElementById('resetBtn');
+    const uploadZone = document.getElementById('uploadZone');
+    const canvasZone = document.getElementById('canvasZone');
+    const fileInput = document.getElementById('fileInput');
+    const resetBtn = document.getElementById('resetImageBtn');
     const canvas = document.getElementById('mainCanvas');
     const ctx = canvas.getContext('2d');
-    const resultsContainer = document.getElementById('croppedImagesContainer');
+    const resultsContainer = document.getElementById('resultsList');
+    const emptyState = document.getElementById('emptyResultsState');
+    const itemsCountEl = document.getElementById('itemsCount');
 
     // State
-    let currentImage = null; // Store the original Image object
-    let imageScale = 1;      // Ratio to convert display coordinates to original image coordinates
-    let drawOffsetX = 0;     // X offset where image is drawn on canvas
-    let drawOffsetY = 0;     // Y offset where image is drawn on canvas
+    let currentImage = null;
+    let imageScale = 1;
+    let drawOffsetX = 0;
+    let drawOffsetY = 0;
+    let croppedCount = 0;
 
-    // Initialize Event Listeners
     function init() {
-        imageInput.addEventListener('change', handleImageUpload);
+        // 1. File Input handling
+        fileInput.addEventListener('change', handleFileInput);
+
+        // 2. Drag & Drop handling
+        setupDragAndDrop();
+
+        // 3. Reset handling
         resetBtn.addEventListener('click', resetApp);
 
-        // Handle window resize to re-render the canvas correctly
-        window.addEventListener('resize', () => {
-            if (currentImage) {
-                renderImageToCanvas();
-                // inputManager needs to know about geometry changes
-                if (window.InputManager && window.InputManager.updateCanvasGeometry) {
-                    window.InputManager.updateCanvasGeometry();
-                }
-            }
-        });
+        // 4. Resize handling
+        window.addEventListener('resize', handleResize);
     }
 
-    function handleImageUpload(event) {
-        const file = event.target.files[0];
+    function setupDragAndDrop() {
+        // Prevent default drag behaviors to allow drop
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        // Add visual cues when dragging files over
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadZone.addEventListener(eventName, () => uploadZone.classList.add('drag-active'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadZone.addEventListener(eventName, () => uploadZone.classList.remove('drag-active'), false);
+        });
+
+        // Handle the actual drop
+        uploadZone.addEventListener('drop', handleDrop, false);
+    }
+
+    function handleDrop(e) {
+        const file = e.dataTransfer.files[0];
+        processFile(file);
+    }
+
+    function handleFileInput(e) {
+        const file = e.target.files[0];
+        processFile(file);
+    }
+
+    function processFile(file) {
         if (!file) return;
 
-        // Basic validation
+        // Check if the file is a PNG
         if (file.type !== 'image/png') {
-            alert('Please upload a PNG image.');
+            alert('에러: PNG 파일만 업로드 가능합니다. (Error: Only PNG files are allowed)');
             return;
         }
 
@@ -47,45 +82,62 @@ const General = (() => {
             const img = new Image();
             img.onload = () => {
                 currentImage = img;
-                renderImageToCanvas();
 
-                // Initialize input manager once the image is loaded
-                if (window.InputManager) {
-                    window.InputManager.init(canvas, currentImage, getRenderContext());
-                }
+                // Switch UI from Upload Zone to Canvas Zone
+                uploadZone.classList.add('hidden');
+                canvasZone.classList.remove('hidden');
+
+                const divider = document.getElementById('cropActionDivider');
+                if (divider) divider.classList.remove('hidden');
+
+                // Give DOM a tiny moment to render the new unhidden container sizes
+                setTimeout(() => {
+                    renderImageToCanvas();
+                    // Initialize or reset InputManager
+                    if (window.InputManager) {
+                        window.InputManager.init(canvas, currentImage, getRenderContext());
+                    }
+                }, 10);
             };
             img.src = e.target.result;
         };
         reader.readAsDataURL(file);
     }
 
+    function handleResize() {
+        if (currentImage && !canvasZone.classList.contains('hidden')) {
+            renderImageToCanvas();
+            if (window.InputManager && window.InputManager.updateCanvasGeometry) {
+                window.InputManager.updateCanvasGeometry();
+            }
+        }
+    }
+
     function renderImageToCanvas() {
         if (!currentImage) return;
 
+        // Get the parent wrapper's size
         const container = canvas.parentElement;
-
-        // Set canvas internal resolution to match its container's actual size
         canvas.width = container.clientWidth;
         canvas.height = container.clientHeight;
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Calculate scaling to fit the image inside the canvas while maintaining aspect ratio
+        // Calculate scaling (fit inside canvas, maintaining aspect ratio)
         const scaleX = canvas.width / currentImage.width;
         const scaleY = canvas.height / currentImage.height;
-        imageScale = Math.min(scaleX, scaleY); // Fit entirely inside the area
+        imageScale = Math.min(scaleX, scaleY) * 0.95; // 0.95 to leave a tiny bit of breathing room/margin
 
         const drawWidth = currentImage.width * imageScale;
         const drawHeight = currentImage.height * imageScale;
 
-        // Center the image
+        // Center on canvas
         drawOffsetX = (canvas.width - drawWidth) / 2;
         drawOffsetY = (canvas.height - drawHeight) / 2;
 
         ctx.drawImage(currentImage, drawOffsetX, drawOffsetY, drawWidth, drawHeight);
     }
 
-    // Helper to provide context data to inputManager
     function getRenderContext() {
         return {
             scale: imageScale,
@@ -94,48 +146,91 @@ const General = (() => {
         };
     }
 
-    // Called by inputManager to trigger a UI update with the new image
+    // Called by inputManager to inject the result HTML
     function displayCroppedResult(dataUrl) {
-        const itemDiv = document.createElement('div');
-        itemDiv.className = 'cropped-item';
+        // Hide empty state on first crop
+        if (emptyState && !emptyState.classList.contains('hidden')) {
+            emptyState.classList.add('hidden');
+        }
 
+        croppedCount++;
+        itemsCountEl.textContent = croppedCount;
+
+        // Create card layout
+        const card = document.createElement('div');
+        card.className = 'result-card';
+
+        // Image Frame
+        const imgFrame = document.createElement('div');
+        imgFrame.className = 'result-image-frame';
         const img = document.createElement('img');
         img.src = dataUrl;
+        imgFrame.appendChild(img);
 
+        // Actions Frame
+        const actionsFrame = document.createElement('div');
+        actionsFrame.className = 'result-actions';
         const link = document.createElement('a');
         link.href = dataUrl;
-        link.download = `cropped_${Date.now()}.png`;
-        link.className = 'download-link';
-        link.textContent = 'Download';
+        link.download = `crop_${Date.now()}.png`;
+        link.className = 'btn btn-download';
 
-        itemDiv.appendChild(img);
-        itemDiv.appendChild(link);
+        // Add SVG icon to download button
+        link.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Save PNG`;
 
-        // Prepend to show newest first
-        resultsContainer.prepend(itemDiv);
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn btn-danger btn-icon-only';
+        deleteBtn.title = 'Delete item';
+        deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
+
+        deleteBtn.addEventListener('click', () => {
+            card.remove();
+            croppedCount--;
+            itemsCountEl.textContent = croppedCount;
+            // Show empty state again if list is empty
+            if (croppedCount === 0 && emptyState) {
+                emptyState.classList.remove('hidden');
+            }
+        });
+
+        actionsFrame.appendChild(link);
+        actionsFrame.appendChild(deleteBtn);
+
+        card.appendChild(imgFrame);
+        card.appendChild(actionsFrame);
+
+        // Add to the top of the list
+        resultsContainer.prepend(card);
     }
 
     function resetApp() {
         currentImage = null;
+        fileInput.value = '';
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        imageInput.value = '';
-        resultsContainer.innerHTML = '';
+
+        // UI reset
+        canvasZone.classList.add('hidden');
+        uploadZone.classList.remove('hidden');
+
+        const divider = document.getElementById('cropActionDivider');
+        if (divider) divider.classList.add('hidden');
+
         if (window.InputManager && window.InputManager.reset) {
             window.InputManager.reset();
         }
     }
 
-    // Expose public API
     return {
         init,
         displayCroppedResult,
-        renderImageToCanvas, // Allow re-rendering from inputManager if needed
+        renderImageToCanvas,
         getRenderContext
     };
 })();
 
-// Initialize when DOM is ready
+// Wait for DOM
 document.addEventListener('DOMContentLoaded', General.init);
 
-// Expose slightly globally the callback for inputManager
+// Expose globally for inputManager
 window.displayCroppedResult = General.displayCroppedResult;
+window.General = General;
