@@ -73,7 +73,7 @@ const General = (() => {
         if (!file) return;
 
         // Check if the file is a PNG
-        if (file.type !== 'image/png') {
+        if (!file.name.toLowerCase().endsWith('.png')) {
             alert('에러: PNG 파일만 업로드 가능합니다. (Error: Only PNG files are allowed)');
             return;
         }
