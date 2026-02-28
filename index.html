@@ -12,46 +12,55 @@
 <body>
     <canvas id="bg-canvas"></canvas>
 
+    <nav class="top-nav">
+        <a href="#" class="logo">Toolbox.</a>
+        <button id="lang-toggle" class="lang-btn">EN</button>
+    </nav>
+
     <header>
-        <h1>이미지 편집 도구를 모아둔 웹 에디터</h1>
-        <p>내가 불편해서 만든 웹페이지들.</p>
+        <h1 data-ko="이미지 편집 도구를 모아둔 웹 에디터" data-en="Web Editor Collection for Image Tools">이미지 편집 도구를 모아둔 웹 에디터</h1>
+        <p data-ko="내가 불편해서 만든 웹페이지들." data-en="Web pages I made because I was uncomfortable.">내가 불편해서 만든 웹페이지들.</p>
     </header>
 
     <main class="container">
         <div class="grid">
             <!-- 다중PNG변환기 -->
             <a href="다중PNG시트변환기/index.html" class="card" id="card-png-merge">
-                <div class="card-image">🖼️</div>
+                <div class="card-image"></div>
                 <div class="card-content">
-                    <h2 class="card-title">PNG 병합하기</h2>
-                    <p class="card-description">png 여러개를 한 png로 합치기.</p>
+                    <h2 class="card-title" data-ko="PNG 병합하기" data-en="Merge PNGs">PNG 병합하기</h2>
+                    <p class="card-description" data-ko="png 여러개를 한 png로 합치기."
+                        data-en="Combine multiple PNGs into one.">png 여러개를 한 png로 합치기.</p>
                 </div>
             </a>
 
             <!-- 애니메이션시트편집기 -->
             <a href="애니메이션시트편집기/index.html" class="card" id="card-anim-sheet">
-                <div class="card-image">🎬</div>
+                <div class="card-image"></div>
                 <div class="card-content">
-                    <h2 class="card-title">스프라이트 시트 편집기</h2>
-                    <p class="card-description">gif를 애니메이션 시트png로 변환하기.</p>
+                    <h2 class="card-title" data-ko="스프라이트 시트 편집기" data-en="Sprite Sheet Editor">스프라이트 시트 편집기</h2>
+                    <p class="card-description" data-ko="gif를 애니메이션 시트png로 변환하기."
+                        data-en="Convert GIF to an animation sheet PNG.">gif를 애니메이션 시트png로 변환하기.</p>
                 </div>
             </a>
 
             <!-- PNG커터 -->
             <a href="PNG커터/index.html" class="card" id="card-png-cutter">
-                <div class="card-image">✂️</div>
+                <div class="card-image"></div>
                 <div class="card-content">
-                    <h2 class="card-title">PNG 자르기</h2>
-                    <p class="card-description">PNG를 일정 크기로 자르기.</p>
+                    <h2 class="card-title" data-ko="PNG 자르기" data-en="Cut PNG">PNG 자르기</h2>
+                    <p class="card-description" data-ko="PNG를 일정 크기로 자르기." data-en="Cut a PNG to a specific size.">PNG를
+                        일정 크기로 자르기.</p>
                 </div>
             </a>
 
             <!-- 확장자변환기 -->
             <a href="확장자변환기/index.html" class="card" id="card-png-cutter">
-                <div class="card-image">✂️</div>
+                <div class="card-image"></div>
                 <div class="card-content">
-                    <h2 class="card-title">확장자 변환기</h2>
-                    <p class="card-description">이미지 확장자를 변환하기.</p>
+                    <h2 class="card-title" data-ko="확장자 변환기" data-en="Extension Converter">확장자 변환기</h2>
+                    <p class="card-description" data-ko="이미지 확장자를 변환하기." data-en="Convert image extensions.">이미지 확장자를
+                        변환하기.</p>
                 </div>
             </a>
 
@@ -59,8 +68,9 @@
             <div class="card card--placeholder" id="card-coming-soon">
                 <div class="card-image">✦</div>
                 <div class="card-content">
-                    <h2 class="card-title">Coming Soon</h2>
-                    <p class="card-description">제작자가 불편한 점이 생기면 만들어질 예정.</p>
+                    <h2 class="card-title" data-ko="Coming Soon" data-en="Coming Soon">Coming Soon</h2>
+                    <p class="card-description" data-ko="제작자가 불편한 점이 생기면 만들어질 예정."
+                        data-en="To be made when the creator needs it.">제작자가 불편한 점이 생기면 만들어질 예정.</p>
                 </div>
             </div>
         </div>

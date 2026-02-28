@@ -127,4 +127,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 80);
     });
 
+    // ─── Language Toggle ───────────────────────────────────────────
+    const langBtn = document.getElementById('lang-toggle');
+    let currentLang = 'ko';
+
+    if (langBtn) {
+        langBtn.addEventListener('click', () => {
+            currentLang = currentLang === 'ko' ? 'en' : 'ko';
+            langBtn.textContent = currentLang === 'ko' ? 'EN' : 'KO';
+
+            const elementsToTranslate = document.querySelectorAll('[data-ko][data-en]');
+            elementsToTranslate.forEach(el => {
+                el.textContent = el.getAttribute(`data-${currentLang}`);
+            });
+
+            document.documentElement.lang = currentLang;
+        });
+    }
+
 });
